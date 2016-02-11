@@ -1,12 +1,12 @@
 {
   "name": "fb-xmpp-connector",
   "version": "0.5.4",
-  "description": "Fritbot xmpp Connector",
+  "description": "Fritbot XMPP Connector (Slack, Hipchat, etc)",
   "dependencies": {
-    "q": "",
+    "q": "0.5.0",
     "node-xmpp-client": "1.0.0-alpha20",
-    "ltx": "",
-    "node-stringprep": ""
+    "ltx": "1.0.0",
+    "node-stringprep": "0.2.3"
   },
   "devDependencies": {
     "grunt": "",
@@ -16,7 +16,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git://github.com/Urthen/fb-xmpp-connector.git"
+    "url": "git://github.com/fritbot/fb-xmpp-connector.git"
   },
   "main": "./index.js",
   "keywords": [
@@ -28,7 +28,7 @@
   "author": "Michael Pratt",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/Urthen/fb-xmpp-connector/issues"
+    "url": "https://github.com/fritbot/fb-xmpp-connector/issues"
   },
-  "homepage": "https://github.com/Urthen/fb-xmpp-connector"
+  "homepage": "https://github.com/fritbot/fb-xmpp-connector"
 }
