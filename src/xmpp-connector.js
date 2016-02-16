@@ -1,6 +1,11 @@
 var ltx = require('ltx'),
     Client = require('node-xmpp-client');
 
+// Helper function for debugging. Leave in even if not in use.
+function logStanza(stanza) {
+    console.log("Stanza", JSON.stringify(stanza, function (k, v) { if (k === 'parent') { return 'Circular'; } else { return v; } }, '\t'))
+}
+
 function XMPPConnector(bot, Route) {
     var self = this;
 
@@ -28,7 +33,6 @@ function XMPPConnector(bot, Route) {
 
     // Handle whenever we get a XML stanza from the server
     self.client.on('stanza', function (stanza) {
-
         // Handle inbound messages
         if (stanza.is('message')) {
             if (stanza.attrs.type === 'chat' || stanza.attrs.type === 'groupchat') {
@@ -48,7 +52,7 @@ function XMPPConnector(bot, Route) {
         }
 
         // Handle inbound room presence
-        if (stanza.is('presence')) {
+        if (stanza.is('presence') && stanza.getChild('x') && stanza.getChild('x').attrs.xmlns.indexOf('muc') > -1)  {
             var user = stanza.attrs.from.split('/')[1];
             var room = stanza.attrs.from.split('@')[0];
 
@@ -72,6 +76,9 @@ function XMPPConnector(bot, Route) {
         self.client.send(new ltx.Element('presence', { })
           .c('show').t('chat').up()
           .c('status').t(bot.config.xmpp_presence)
+            .c('c', {
+                xmlns: "http://jabber.org/protocol/caps",
+                node: "http://hipchat.com/client/bot"})
         );
 
         for (var i in bot.config.xmpp_rooms) {
@@ -111,8 +118,7 @@ XMPPConnector.prototype.joinRoom = function (room) {
     var presence = new ltx.Element('presence', {
         to : room + '@' + this.bot.config.xmpp_conference_host + '/' + this.bot.config.xmpp_resource
     });
-    // Don't get ancient history, but allow the server to send a few minutes, in case we experience a momentary disconnect
-    presence.c('x', { xmlns : 'http ://jabber.org/protocol/muc' }).c('history', { seconds : 300 } );
+    presence.c('x', { xmlns : 'http://jabber.org/protocol/muc' })
     this.client.send(presence);
     this.events.emit('joinedRoom', room);
 };
@@ -120,7 +126,7 @@ XMPPConnector.prototype.joinRoom = function (room) {
 XMPPConnector.prototype.leaveRoom = function (room) {
     console.log('XMPP leaving', room);
     var presence = new ltx.Element('presence', {
-        to : room + '@' + this.bot.config.xmpp_conference_host + '/' + this.bot.config.resource,
+        to : room + '@' + this.bot.config.xmpp_conference_host + '/' + this.bot.config.xmpp_resource,
         type : 'unavailable'
     });
     this.client.send(presence);
@@ -131,11 +137,15 @@ XMPPConnector.prototype.parseChat = function (stanza) {
     var route, user = null, room = null,
         body = stanza.getChildText('body');
 
+    // Don't accept empty messages
     if (!body) {
         return;
     }
 
-    //console.log("Stanza", JSON.stringify(stanza, function (k, v) { if (k === 'parent') { return 'Circular'; } else { return v; } }, '\t'))
+    // Don't accept old messages - if the bot is down, it's down.
+    if (stanza.getChild('delay')) {
+        return;
+    }
 
     if (stanza.attrs.type === 'groupchat') {
         // Extract user + room from stanza
@@ -143,7 +153,7 @@ XMPPConnector.prototype.parseChat = function (stanza) {
         room = stanza.attrs.from.split('@')[0];
 
         // Never pay any attention to our own messages.
-        if (user === this.bot.config.xmpp_user) {
+        if (user === this.bot.config.xmpp_user || user === this.bot.config.xmpp_resource) {
             return;
         }
 
