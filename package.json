@@ -1,6 +1,6 @@
 {
   "name": "fb-xmpp-connector",
-  "version": "0.6.0",
+  "version": "0.6.0-hipchat",
   "description": "Fritbot XMPP Connector (Slack, Hipchat, etc)",
   "dependencies": {
     "ltx": "^2.2.0",
